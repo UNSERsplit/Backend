@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgresql
+    image: postgres
     environment:
       POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
