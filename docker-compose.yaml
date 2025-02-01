@@ -9,8 +9,11 @@ services:
   web:
     build: .
     
+    environment:
+      DB_URL: ${DB_URL}
+
     volumes:
-      - ./src:/app:ro
+      - ./src:/app
     
     depends_on:
       - db
