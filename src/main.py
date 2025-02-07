@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from .models import User
-from .database import DB
+from models import User
+from database import DB
 from typing import List
 from sqlmodel import select
 
