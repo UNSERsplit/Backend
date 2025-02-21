@@ -3,7 +3,7 @@ from pydantic import EmailStr
 from typing import Optional
 
 class User(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    userid: Optional[int] = Field(default=None, primary_key=True)
     email: EmailStr = Field(unique=True)
     firstname: str
     lastname: str

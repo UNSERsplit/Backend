@@ -6,6 +6,7 @@ from fastapi import Depends
 
 engine = create_engine(os.environ["DB_URL"])
 
+
 def _get_db():
     session = Session(engine)
     try:
