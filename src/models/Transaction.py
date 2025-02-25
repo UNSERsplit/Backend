@@ -8,3 +8,4 @@ class Transaction(SQLModel, table=True):
     touserid: int = Field(default=None, foreign_key="user.userid")
     date: date
     amount: float
+    groupid: int = Field(default=None, foreign_key="group.groupid")
