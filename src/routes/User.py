@@ -17,8 +17,7 @@ def getAllUsers(db: DB) -> List[User]:
 """get public data from User"""
 @userrouter.get("/{userid}")
 def getUserById(db: DB, userid: int) -> PublicUserData:
-    return db.exec(select(PublicUserData).where(PublicUserData.userid == userid))
- #   return db.exec(select(User)).where(User.id == userid)
+    return db.exec(select(User).where(User.userid == userid))
 
 
 """register user"""
