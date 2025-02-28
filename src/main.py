@@ -7,6 +7,7 @@ from .routes.User import userrouter
 from .routes.Transaction import transactionRouter
 from .routes.Group import grouprouter
 from .models.models import LoginRequest, LoginResponse
+import datetime
 
 app = FastAPI()
 
@@ -16,7 +17,7 @@ app.include_router(grouprouter)
 
 @app.post("/api/login")
 def login(data: LoginRequest) -> LoginResponse:
-    return 0
+    return LoginResponse(token="abc", expiration=datetime.datetime.now())
 
 @app.post("/api/logout")
 def logout() -> str:
