@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from ..database import DB
 from typing import List
 from sqlmodel import select
-from ..models.User import User
+from ..models.User import User, UserCreateRequest, PrivateUserData
 
 
 userrouter = APIRouter(prefix="/api/user")
@@ -19,23 +19,15 @@ def getUserById(db: DB, userid : int) -> User:
 
 
 @userrouter.post("/")
-def createUser(user: User):
+def createUser(user: UserCreateRequest) -> bool:
     return 0
 
 
 @userrouter.put("/{userid}")
-def updateUser(user: User):
+def updateUser(user: PrivateUserData) -> PrivateUserData:
     return 0
 
 
 @userrouter.delete("/{userid}")
-def deleteUser(user: User):
-    return 0
-
-@userrouter.put("/resetpassword/{userid}")
-def resetPassword(userid: int, password: str):
-    return 0
-
-@userrouter.get("/resetpassword/{userid}")
-def getResetPassword(userid: int, password: str):
+def deleteUser() -> str:
     return 0

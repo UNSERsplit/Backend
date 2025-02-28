@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from ..database import DB
 from typing import List
 from sqlmodel import select
-from ..models.Transaction import Transaction
+from ..models.Transaction import Transaction, TransactionCreateRequest
 
 transactionRouter = APIRouter(prefix="/api/transactions")
 
@@ -17,7 +17,7 @@ def gettTransactionsBetweenUsers(touserid: int) -> List[Transaction]:
 
 
 @transactionRouter.post("/")
-def addTransaction(db: DB, transaction: Transaction):
+def addTransaction(db: DB, transaction: TransactionCreateRequest) -> str:
     return 0
 
 
