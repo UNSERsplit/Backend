@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from .models.User import User
 from .database import DB
 from typing import List
@@ -17,6 +17,10 @@ app.include_router(grouprouter)
 
 @app.post("/api/login")
 def login(data: LoginRequest) -> LoginResponse:
+    raise HTTPException(
+        status_code=401,
+        detail="mock"
+    )
     return LoginResponse(token="abc", expiration=datetime.datetime.now())
 
 @app.post("/api/logout")
