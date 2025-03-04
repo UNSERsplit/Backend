@@ -17,11 +17,12 @@ app.include_router(grouprouter)
 
 @app.post("/api/login")
 def login(data: LoginRequest) -> LoginResponse:
+    if data.username == data.password:
+        return LoginResponse(token="abc", expiration=datetime.datetime.now())
     raise HTTPException(
         status_code=401,
         detail="mock"
     )
-    return LoginResponse(token="abc", expiration=datetime.datetime.now())
 
 @app.post("/api/logout")
 def logout() -> str:
