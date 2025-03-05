@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from .models.User import User
 from .database import DB
 from typing import List
@@ -27,3 +27,13 @@ def login(data: LoginRequest) -> LoginResponse:
 @app.post("/api/logout")
 def logout() -> str:
     return 0
+
+@app.get("/api/test")
+def test_token(r: Request) -> str:
+    h = r.headers.get("Authentication")
+    if not h or not h.startswith("Bearer ") or not h.split("Bearer ")[1]:
+        raise HTTPException(
+            status_code=401,
+            detail="mock"
+        )
+    return "ok"
