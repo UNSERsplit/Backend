@@ -30,7 +30,7 @@ def logout() -> str:
 
 @app.get("/api/test")
 def test_token(r: Request) -> str:
-    h = r.headers.get("Authentication")
+    h = r.headers.get("Authorization")
     if not h or not h.startswith("Bearer ") or not h.split("Bearer ")[1]:
         raise HTTPException(
             status_code=401,
