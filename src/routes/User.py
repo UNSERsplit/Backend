@@ -27,6 +27,7 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    user.password = "-REDACTED-"
     return user
 
 """get your own data"""
@@ -45,6 +46,7 @@ def updateUser(user: UserCreateRequest, db: DB) -> User:
     u.update(**user.model_dump())
     db.commit()
     db.refresh(u)
+    user.password = "-REDACTED-"
     return user
 
 
@@ -57,4 +59,5 @@ def deleteUser(user: UserCreateRequest, db: DB) -> str:
     db.refresh(user)
     if db.exec(select(User)).where(User.id == user.id):
         raise HTTPException(status_code=500, detail="User could not be deleted")
+    user.password = "-REDACTED-"
     return user
