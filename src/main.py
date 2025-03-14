@@ -7,12 +7,14 @@ from .routes.User import userrouter
 from .routes.Transaction import transactionRouter
 from .routes.Group import grouprouter
 from .models.models import LoginRequest, LoginResponse
+from auth import authrouter
 
 app = FastAPI()
 
 app.include_router(userrouter)
 app.include_router(transactionRouter)
 app.include_router(grouprouter)
+app.include_router(authrouter)
 
 @app.post("/api/login")
 def login(data: LoginRequest) -> LoginResponse:
