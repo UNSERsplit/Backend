@@ -3,6 +3,7 @@ from ..database import DB
 from typing import List
 from sqlmodel import select
 from ..models.User import User, UserCreateRequest, PrivateUserData, PublicUserData
+from ..auth import get_password_hash
 
 
 userrouter = APIRouter(prefix="/api/user")
@@ -23,7 +24,7 @@ def getUserById(db: DB, userid: int) -> PublicUserData:
 """register user"""
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
-    user = User(**user.model_dump())
+    user = User.model_validate(user.model_dump(), update={"password":get_password_hash(user.password)})
     db.add(user)
     db.commit()
     db.refresh(user)

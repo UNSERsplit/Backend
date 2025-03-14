@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from .models.User import User
 from .database import DB
 from typing import List
@@ -7,7 +7,7 @@ from .routes.User import userrouter
 from .routes.Transaction import transactionRouter
 from .routes.Group import grouprouter
 from .models.models import LoginRequest, LoginResponse
-from .auth import authrouter
+from .auth import authrouter, get_current_user
 import datetime
 
 app = FastAPI()
@@ -17,25 +17,6 @@ app.include_router(transactionRouter)
 app.include_router(grouprouter)
 app.include_router(authrouter)
 
-@app.post("/api/login")
-def login(data: LoginRequest) -> LoginResponse:
-    if data.username == data.password:
-        return LoginResponse(token="abc", expiration=datetime.datetime.now())
-    raise HTTPException(
-        status_code=401,
-        detail="mock"
-    )
-
-@app.post("/api/logout")
-def logout() -> str:
-    return 0
-
 @app.get("/api/test")
-def test_token(r: Request) -> str:
-    h = r.headers.get("Authorization")
-    if not h or not h.startswith("Bearer ") or not h.split("Bearer ")[1]:
-        raise HTTPException(
-            status_code=401,
-            detail="mock"
-        )
+def test_token(user: User = Depends(get_current_user)) -> str:
     return "ok"

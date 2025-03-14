@@ -5,13 +5,14 @@ from pydantic import BaseModel
 from .database import DB
 
 from datetime import timedelta, datetime
-from .routes.User import getUserById, User
-from jwt import jwt
+from .models.User import User
+import jwt
 from passlib.context import CryptContext
+from typing import Union, Optional
 
 
 class Token(BaseModel):
-    acces_token: str
+    access_token: str
     token_type: str
 
 
@@ -25,7 +26,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 43800  # 1 Month
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 def verify_password(plain_passwd, hashed_password):
     return pwd_context.verify(plain_passwd, hashed_password)
@@ -33,18 +34,18 @@ def verify_password(plain_passwd, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def authenticate_user(db: DB, email: str, password: str):
+def authenticate_user(db: DB, email: str, password: str) -> Union[bool, User]:
     user = db.query(User).filter(User.email == email).first()
 
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password):
         return False
 
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta or None = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now() + expires_delta
@@ -56,7 +57,7 @@ def create_access_token(data: dict, expires_delta: timedelta or None = None):
     return encoded_jwt
 
 
-async def get_current_user(db: DB, token: str = Depends(oauth_2_scheme)):
+async def get_current_user(db: DB, token: str = Depends(oauth_2_scheme)) -> User:
     credential_exceptions = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
 
     try:
@@ -76,17 +77,12 @@ async def get_current_user(db: DB, token: str = Depends(oauth_2_scheme)):
 
 @authrouter.post("/token", response_model=Token)
 async def login_for_access_token(db: DB, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(db, form_data.email, form_data.password)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@authrouter.get("/users/me", response_model=User)
-async def get_loggedin_user(current_user: User = Depends(get_current_user)):
-    return current_user
+    return Token(access_token=access_token, token_type="Bearer")
 
 
 

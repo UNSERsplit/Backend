@@ -4,7 +4,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Transaction import Transaction, TransactionCreateRequest
-from ..auth import get_loggedin_user, get_current_user
+from ..auth import get_current_user
 from ..models.User import User
 
 transactionRouter = APIRouter(prefix="/api/transactions")
