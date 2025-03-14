@@ -5,6 +5,7 @@ from sqlmodel import select
 from ..models.Group import Group, GroupCreationRequest
 from ..models.User import User, PublicUserData
 from ..models.GroupMembers import GroupMembers
+from ..auth import get_current_user
 
 grouprouter = APIRouter(prefix="/api/group")
 
