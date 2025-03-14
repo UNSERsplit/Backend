@@ -7,7 +7,7 @@ from .routes.User import userrouter
 from .routes.Transaction import transactionRouter
 from .routes.Group import grouprouter
 from .models.models import LoginRequest, LoginResponse
-from auth import authrouter
+from .auth import authrouter
 import datetime
 
 app = FastAPI()
