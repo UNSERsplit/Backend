@@ -25,7 +25,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 43800  # 1 Month
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth")
+oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 def verify_password(plain_passwd, hashed_password):
     return pwd_context.verify(plain_passwd, hashed_password)
@@ -91,4 +91,4 @@ async def get_loggedin_user(current_user: User = Depends(get_current_user)):
 
 
 
-# https://www.youtube.com/watch?v=5GxQ1rLTwaU 33:00
+# https://www.youtube.com/watch?v=5GxQ1rLTwaU
