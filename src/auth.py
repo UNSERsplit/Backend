@@ -18,7 +18,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: str
 
-authrouter = APIRouter(prefix="api/auth")
+authrouter = APIRouter(prefix="/api/auth")
 
 SECRET_KEY = "abcdefghijklmnopqrstuvwxyz"
 ALGORITHM = "HS256"
