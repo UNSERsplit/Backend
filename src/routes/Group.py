@@ -28,6 +28,11 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
     db.add(g)
     db.commit()
     db.refresh(g)
+
+    groupmember = GroupMembers(groupid=g.groupid, userid=current_user.userid, pending=False)
+    db.add(groupmember)
+    db.commit()
+    db.refresh(groupmember)
     return g
 
 """rename group [ADMIN]"""
@@ -67,4 +72,4 @@ def deleteUserFromGroup(groupid : int, userid: int, current_user: User = Depends
 
 @grouprouter.get("/{groupid}/users")
 def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:
-    return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(GroupMembers.groupid == groupid)).all()
+    return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(and_(GroupMembers.groupid == groupid, GroupMembers.pending == False))).all()
