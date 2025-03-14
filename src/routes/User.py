@@ -23,7 +23,7 @@ def getUserById(db: DB, userid: int, current_user: User = Depends(get_current_us
 
 """register user"""
 @userrouter.post("/")
-def createUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
+def createUser(user: UserCreateRequest, db: DB) -> User:
     user = User.model_validate(user.model_dump(), update={"password":get_password_hash(user.password)})
     db.add(user)
     db.commit()
