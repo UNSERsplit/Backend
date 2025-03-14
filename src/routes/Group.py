@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..database import DB
 from typing import List
-from sqlmodel import select
+from sqlmodel import select, and_
 from ..models.Group import Group, GroupCreationRequest
 from ..models.User import User, PublicUserData
 from ..models.GroupMembers import GroupMembers
@@ -17,14 +17,14 @@ def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -
 
 """get group"""
 @grouprouter.get("/{groupid}")
-def getGroupByID(groupid: int, db: DB) -> Group:
+def getGroupByID(groupid: int, db: DB, current_user: User = Depends(get_current_user)) -> Group:
     return db.exec(select(Group).where(Group.id == groupid)).one()
 
 
 """create group"""
 @grouprouter.post("/")
-def createGroup(group: GroupCreationRequest) -> Group:
-    g = Group(**GroupCreationRequest.model_dump())
+def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depends(get_current_user)) -> Group:
+    g = Group(**group.model_dump(), adminuser_userid=current_user.userid)
     db.add(g)
     db.commit()
     db.refresh(g)
@@ -32,17 +32,17 @@ def createGroup(group: GroupCreationRequest) -> Group:
 
 """rename group [ADMIN]"""
 @grouprouter.put("/{groupid}")
-def updateGroup(groupid: int, group: GroupCreationRequest) -> Group:
+def updateGroup(groupid: int, group: GroupCreationRequest, current_user: User = Depends(get_current_user)) -> Group:
     return 0
 
 """delete group [ADMIN]"""
 @grouprouter.delete("/{groupid}")
-def deleteGroup(groupid: int) -> str:
+def deleteGroup(groupid: int, current_user: User = Depends(get_current_user)) -> str:
     return 0
 
 """add user to group [ADMIN]"""
 @grouprouter.post("/{groupid}/users")
-def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # accepted invite and admin accepts user
+def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:  # accepted invite and admin accepts user
     groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid,userid == GroupMembers.userid))).one()
     groupmember.update(pending=False)
     db.commit()
@@ -52,7 +52,7 @@ def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # accept
 
 """invite user to group"""
 @grouprouter.post("/{groupid}/users/{userId}/invite")
-def inviteUserToGroup(groupid: int, userid: int) -> GroupMembers:  # send invite
+def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     groupmember = GroupMembers(groupid=groupid, userid=userid, pending=True)
     db.add(groupmember)
     db.commit()
@@ -62,9 +62,9 @@ def inviteUserToGroup(groupid: int, userid: int) -> GroupMembers:  # send invite
 
 """remove user from group [ADMIN]"""
 @grouprouter.delete("/{groupid}/users/{userid}")
-def deleteUserFromGroup(groupid : int, userid: int) -> str:
+def deleteUserFromGroup(groupid : int, userid: int, current_user: User = Depends(get_current_user)) -> str:
     return 0
 
 @grouprouter.get("/{groupid}/users")
-def getUsersOfGroup(db: DB, groupid: int) -> List[PublicUserData]:
+def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:
     return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(GroupMembers.groupid == groupid)).all()

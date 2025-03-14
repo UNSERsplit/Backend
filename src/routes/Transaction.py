@@ -7,6 +7,8 @@ from ..models.Transaction import Transaction, TransactionCreateRequest
 from ..auth import get_current_user
 from ..models.User import User
 
+from datetime import date
+
 transactionRouter = APIRouter(prefix="/api/transactions")
 
 """get all my past transactions"""
@@ -23,8 +25,8 @@ def getTransactionsBetweenUsers(touserid: int, db: DB, current_user: User = Depe
 
 """create new transaction"""
 @transactionRouter.post("/")
-def addTransaction(db: DB, transaction: TransactionCreateRequest) -> Transaction:
-    transaction = Transaction(**transaction.model_dump())
+def addTransaction(db: DB, transaction: TransactionCreateRequest, current_user: User = Depends(get_current_user)) -> Transaction:
+    transaction = Transaction(**transaction.model_dump(), fromuserid=current_user.userid, date=date.today())
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
