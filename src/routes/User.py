@@ -9,7 +9,7 @@ from ..auth import get_password_hash, get_current_user
 userrouter = APIRouter(prefix="/api/user")
 
 
-@userrouter.get("/{userid}")
+@userrouter.get("/{userid:int}")
 def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> PublicUserData:
     """get public data from User"""
 
@@ -31,7 +31,7 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
 def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
     """get your own data"""
 
-    u = db.exec(select(User)).where(User.id == current_user.id).one()
+    u = db.exec(select(User).where(User.id == current_user.id)).one()
     user = User(**u.model_dump())
     user.password = "-REDACTED-"
     return user
@@ -40,7 +40,7 @@ def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
 def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """update your own data"""
 
-    u = db.exec(select(User)).where(User.id == current_user.id).one()
+    u = db.exec(select(User).where(User.id == current_user.id)).one()
     user.password = u.password
     u.update(**user.model_dump())
     db.commit()
@@ -52,12 +52,12 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
 @userrouter.delete("/me")
 def deleteUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> str:
     """delete your own account"""
-    
-    user = db.exec(select(User)).where(User.id == current_user.id).one()
+
+    user = db.exec(select(User).where(User.id == current_user.id)).one()
     db.delete(user)
     db.commit()
     db.refresh(user)
-    if db.exec(select(User)).where(User.id == current_user.id):
+    if db.exec(select(User).where(User.id == current_user.id)):
         raise HTTPException(status_code=500, detail="User could not be deleted")
     user.password = "-REDACTED-"
     return user
