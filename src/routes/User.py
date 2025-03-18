@@ -9,21 +9,17 @@ from ..auth import get_password_hash, get_current_user
 userrouter = APIRouter(prefix="/api/user")
 
 
-# DEBUG
-@userrouter.get("/")
-def getAllUsers(db: DB) -> List[User]:
-    return db.exec(select(User)).all()
-
-
-"""get public data from User"""
 @userrouter.get("/{userid}")
-def getUserById(db: DB, userid: int, current_user: User = Depends(get_current_user)) -> PublicUserData:
+def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> PublicUserData:
+    """get public data from User"""
+
     return db.exec(select(User).where(User.userid == userid)).one()
 
 
-"""register user"""
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
+    """register user"""
+
     user = User.model_validate(user.model_dump(), update={"password":get_password_hash(user.password)})
     db.add(user)
     db.commit()
@@ -31,18 +27,20 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
     user.password = "-REDACTED-"
     return user
 
-"""get your own data"""
 @userrouter.get("/me")
 def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
-    u = db.exec(select(User)).where(User.id == user.id).one()
+    """get your own data"""
+
+    u = db.exec(select(User)).where(User.id == current_user.id).one()
     user = User(**u.model_dump())
     user.password = "-REDACTED-"
     return user
 
-"""update your own data"""
 @userrouter.put("/me")
 def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
-    u = db.exec(select(User)).where(User.id == user.id).one()
+    """update your own data"""
+
+    u = db.exec(select(User)).where(User.id == current_user.id).one()
     user.password = u.password
     u.update(**user.model_dump())
     db.commit()
@@ -51,14 +49,15 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
     return user
 
 
-"""delete your own account"""
 @userrouter.delete("/me")
 def deleteUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> str:
-    user = db.exec(select(User)).where(User.id == user.id).one()
+    """delete your own account"""
+    
+    user = db.exec(select(User)).where(User.id == current_user.id).one()
     db.delete(user)
     db.commit()
     db.refresh(user)
-    if db.exec(select(User)).where(User.id == user.id):
+    if db.exec(select(User)).where(User.id == current_user.id):
         raise HTTPException(status_code=500, detail="User could not be deleted")
     user.password = "-REDACTED-"
     return user
