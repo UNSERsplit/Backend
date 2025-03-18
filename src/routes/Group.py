@@ -20,7 +20,7 @@ def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -
 def getGroupByID(groupid: int, db: DB, current_user: User = Depends(get_current_user)) -> Group:
     """get group"""
 
-    return db.exec(select(Group).where(Group.id == groupid)).one()
+    return db.exec(select(Group).where(Group.groupid == groupid)).one()
 
 
 @grouprouter.post("/")
