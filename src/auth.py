@@ -14,6 +14,7 @@ from typing import Union, Optional
 class Token(BaseModel):
     access_token: str
     token_type: str
+    userid: int
 
 
 class TokenData(BaseModel):
@@ -82,7 +83,7 @@ async def login_for_access_token(db: DB, form_data: OAuth2PasswordRequestForm = 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
-    return Token(access_token=access_token, token_type="Bearer")
+    return Token(access_token=access_token, token_type="Bearer", userid=user.userid)
 
 
 
