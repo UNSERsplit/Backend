@@ -9,41 +9,47 @@ from ..auth import get_current_user
 
 grouprouter = APIRouter(prefix="/api/group")
 
-"""get all groups i am in"""
 @grouprouter.get("/")
 def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -> List[Group]:
+    """get all groups i am in"""
+
     return db.exec(select(Group).join(GroupMembers, Group.groupid == GroupMembers.groupid).where(current_user.userid == GroupMembers.userid)).all()
 
 
-"""get group"""
 @grouprouter.get("/{groupid}")
-def getGroupByID(groupid: int, db: DB) -> Group:
-    return db.exec(select(Group).where(Group.id == groupid)).one()
+def getGroupByID(groupid: int, db: DB, current_user: User = Depends(get_current_user)) -> Group:
+    """get group"""
+
+    return db.exec(select(Group).where(Group.groupid == groupid)).one()
 
 
-"""create group"""
 @grouprouter.post("/")
-def createGroup(group: GroupCreationRequest) -> Group:
-    g = Group(**GroupCreationRequest.model_dump())
+def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depends(get_current_user)) -> Group:
+    """create group"""
+
+    g = Group(**group.model_dump(), adminuser_userid=current_user.userid)
     db.add(g)
     db.commit()
     db.refresh(g)
+
+    groupmember = GroupMembers(groupid=g.groupid, userid=current_user.userid, pending=False)
+    db.add(groupmember)
+    db.commit()
+    db.refresh(groupmember)
     return g
 
-
-"""rename group [ADMIN]"""
 @grouprouter.put("/{groupid}")
-def updateGroup(groupid: int, group: GroupCreationRequest, db: DBö) -> Group:
+def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
+    """rename group [ADMIN]"""
     g = db.exec(select(Group).where(Group.id == groupid)).one()
     g.update(group.model_dump())
     db.commit()
     db.refresh(g)
     return g
 
-
-"""delete group [ADMIN]"""
 @grouprouter.delete("/{groupid}")
 def deleteGroup(groupid: int, db: DB) -> Group:
+    """delete group [ADMIN]"""
     g = db.exec(select(Group).where(Group.id == groupid)).one()
     db.delete(g)
     db.commit()
@@ -53,9 +59,10 @@ def deleteGroup(groupid: int, db: DB) -> Group:
     return g
 
 
-"""add user to group [ADMIN]"""
 @grouprouter.post("/{groupid}/users")
-def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # accepted invite and admin accepts user
+def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:  # accepted invite and admin accepts user
+    """add user to group [ADMIN]"""
+
     groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid,userid == GroupMembers.userid))).one()
     groupmember.update(pending=False)
     db.commit()
@@ -63,9 +70,10 @@ def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # accept
     return groupmember
 
 
-"""invite user to group"""
 @grouprouter.post("/{groupid}/users/{userId}/invite")
-def inviteUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # send invite
+def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
+    """invite user to group"""
+
     groupmember = GroupMembers(groupid=groupid, userid=userid, pending=True)
     db.add(groupmember)
     db.commit()
@@ -73,16 +81,15 @@ def inviteUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:  # sen
     return groupmember
 
 
-"""remove user from group [ADMIN]"""
 @grouprouter.delete("/{groupid}/users/{userid}")
 def deleteUserFromGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
+    """remove user from group [ADMIN]"""
     memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
     db.delete(memberofgroup)
     db.commit()
     return memberofgroup
 
-
-"""Get users of Group by Groupid"""
 @grouprouter.get("/{groupid}/users")
-def getUsersOfGroup(db: DB, groupid: int) -> List[PublicUserData]:
-    return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(GroupMembers.groupid == groupid)).all()
+def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:
+    """get all users in group"""
+    return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(and_(GroupMembers.groupid == groupid, GroupMembers.pending == False))).all()
