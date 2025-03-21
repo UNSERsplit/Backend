@@ -52,11 +52,11 @@ def updateUser(user: UserCreateRequest, db: DB) -> User:
 
 """delete your own account"""
 @userrouter.delete("/me")
-def deleteUser(user: UserCreateRequest, db: DB) -> str:
+def deleteUser(user: UserCreateRequest, db: DB) -> User:
     user = db.exec(select(User)).where(User.id == user.id).one()
     db.delete(user)
     db.commit()
-    db.refresh(user)
+    # db.refresh(user)
     if db.exec(select(User)).where(User.id == user.id):
         raise HTTPException(status_code=500, detail="User could not be deleted")
     user.password = "-REDACTED-"
