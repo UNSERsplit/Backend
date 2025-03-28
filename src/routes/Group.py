@@ -39,16 +39,25 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
     return g
 
 @grouprouter.put("/{groupid}")
-def updateGroup(groupid: int, group: GroupCreationRequest, current_user: User = Depends(get_current_user)) -> Group:
+def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
     """rename group [ADMIN]"""
-
-    return 0
+    g = db.exec(select(Group).where(Group.id == groupid)).one()
+    g.update(group.model_dump())
+    db.commit()
+    db.refresh(g)
+    return g
 
 @grouprouter.delete("/{groupid}")
-def deleteGroup(groupid: int, current_user: User = Depends(get_current_user)) -> str:
+def deleteGroup(groupid: int, db: DB) -> Group:
     """delete group [ADMIN]"""
+    g = db.exec(select(Group).where(Group.id == groupid)).one()
+    db.delete(g)
+    db.commit()
+    db.refresh(g)
+    if db.exec(select(Group)).where(Group.id == groupid):
+        raise HTTPException(status_code=500, detail="Group could not be deleted")
+    return g
 
-    return 0
 
 @grouprouter.post("/{groupid}/users")
 def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:  # accepted invite and admin accepts user
@@ -73,10 +82,12 @@ def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = De
 
 
 @grouprouter.delete("/{groupid}/users/{userid}")
-def deleteUserFromGroup(groupid : int, userid: int, current_user: User = Depends(get_current_user)) -> str:
+def deleteUserFromGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
     """remove user from group [ADMIN]"""
-
-    return 0
+    memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
+    db.delete(memberofgroup)
+    db.commit()
+    return memberofgroup
 
 @grouprouter.get("/{groupid}/users")
 def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:

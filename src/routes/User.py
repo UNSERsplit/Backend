@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from ..database import DB
 from typing import List
 from sqlmodel import select
@@ -50,13 +50,13 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
 
 
 @userrouter.delete("/me")
-def deleteUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> str:
+def deleteUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """delete your own account"""
 
     user = db.exec(select(User).where(User.userid == current_user.userid)).one()
     db.delete(user)
     db.commit()
-    db.refresh(user)
+    # db.refresh(user)
     if db.exec(select(User).where(User.userid == current_user.userid)):
         raise HTTPException(status_code=500, detail="User could not be deleted")
     user.password = "-REDACTED-"
