@@ -61,7 +61,7 @@ def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depen
     return groupmember
 
 
-@grouprouter.post("/{groupid}/users/{userId}/invite")
+@grouprouter.post("/{groupid}/users/{userid}/invite")
 def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     """invite user to group"""
 
