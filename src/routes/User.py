@@ -9,6 +9,12 @@ from ..auth import get_password_hash, get_current_user
 userrouter = APIRouter(prefix="/api/user")
 
 
+@userrouter.get("/")
+def getUsers(db: DB) -> List[User]:
+    """Get all User data"""
+    return db.exec(select(User)).all()
+
+
 @userrouter.get("/{userid:int}")
 def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> PublicUserData:
     """get public data from User"""
@@ -20,7 +26,7 @@ def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> Pub
 def createUser(user: UserCreateRequest, db: DB) -> User:
     """register user"""
 
-    user = User.model_validate(user.model_dump(), update={"password":get_password_hash(user.password)})
+    user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -39,25 +45,23 @@ def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
 @userrouter.put("/me")
 def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """update your own data"""
-
     u = db.exec(select(User).where(User.userid == current_user.userid)).one()
-    user.password = u.password
-    u.update(**user.model_dump())
+    u.firstname = user.firstname
+    u.lastname = user.lastname
+    u.iban = user.iban
+    u.password = get_password_hash(user.password)
     db.commit()
     db.refresh(u)
-    user.password = "-REDACTED-"
-    return user
+    u.password = "-REDACTED-"
+    return u
 
 
 @userrouter.delete("/me")
-def deleteUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
+def deleteUser(db: DB, current_user: User = Depends(get_current_user)) -> User:
     """delete your own account"""
 
     user = db.exec(select(User).where(User.userid == current_user.userid)).one()
     db.delete(user)
     db.commit()
-    # db.refresh(user)
-    if db.exec(select(User).where(User.userid == current_user.userid)):
-        raise HTTPException(status_code=500, detail="User could not be deleted")
     user.password = "-REDACTED-"
     return user
