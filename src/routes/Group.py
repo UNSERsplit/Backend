@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.sql.functions import current_user
+
 from ..database import DB
 from typing import List
 from sqlmodel import select, and_
@@ -41,21 +43,10 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
 @grouprouter.put("/{groupid}")
 def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
     """rename group [ADMIN]"""
-    g = db.exec(select(Group).where(Group.id == groupid)).one()
-    g.update(group.model_dump())
+    g = db.exec(select(Group).where(Group.groupid == groupid)).one()
+    g.name = group.model_dump()["name"]
     db.commit()
     db.refresh(g)
-    return g
-
-@grouprouter.delete("/{groupid}")
-def deleteGroup(groupid: int, db: DB) -> Group:
-    """delete group [ADMIN]"""
-    g = db.exec(select(Group).where(Group.id == groupid)).one()
-    db.delete(g)
-    db.commit()
-    db.refresh(g)
-    if db.exec(select(Group)).where(Group.id == groupid):
-        raise HTTPException(status_code=500, detail="Group could not be deleted")
     return g
 
 
@@ -64,7 +55,7 @@ def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depen
     """add user to group [ADMIN]"""
 
     groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid,userid == GroupMembers.userid))).one()
-    groupmember.update(pending=False)
+    groupmember.pending = False
     db.commit()
     db.refresh(groupmember)
     return groupmember
@@ -73,7 +64,9 @@ def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depen
 @grouprouter.post("/{groupid}/users/{userId}/invite")
 def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     """invite user to group"""
-
+    group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+    if current_user.userid != group.adminuser_userid:
+        raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     groupmember = GroupMembers(groupid=groupid, userid=userid, pending=True)
     db.add(groupmember)
     db.commit()
@@ -82,9 +75,14 @@ def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = De
 
 
 @grouprouter.delete("/{groupid}/users/{userid}")
-def deleteUserFromGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
+def deleteUserFromGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:
     """remove user from group [ADMIN]"""
+    group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+    if current_user.userid != group.adminuser_userid:
+        raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
+
+
     db.delete(memberofgroup)
     db.commit()
     return memberofgroup
