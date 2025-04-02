@@ -43,7 +43,7 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
     return g
 
 @grouprouter.put("/{groupid}")
-def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
+def updateGroup(groupid: int, group: GroupCreationRequest, db: DB, current_user: User = Depends(get_current_user)) -> Group:
     """rename group [ADMIN]"""
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
     if current_user.userid != group.adminuser_userid:
