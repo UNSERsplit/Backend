@@ -69,7 +69,7 @@ async def get_current_user(db: DB, token: str = Depends(oauth_2_scheme)) -> User
             raise credential_exceptions
         token_data = TokenData(email=email)
     except Exception as e:
-        print("Auth Exception: ", e)
+        print("Auth Exception:", e, "Token", token)
         raise credential_exceptions
     user = db.query(User).filter(User.email == token_data.email).first()
     if user is None:
