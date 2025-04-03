@@ -10,7 +10,7 @@ from .models.models import LoginRequest, LoginResponse
 from .auth import authrouter, get_current_user
 import datetime
 
-app = FastAPI()
+app = FastAPI(redirect_slashes=False)
 
 app.include_router(userrouter)
 app.include_router(transactionRouter)
