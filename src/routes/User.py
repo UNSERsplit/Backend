@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from ..database import DB
 from typing import List
 from sqlmodel import select, and_
+from sqlalchemy import func
 from ..models.User import User, UserCreateRequest, PrivateUserData, PublicUserData
 from ..auth import get_password_hash, get_current_user
 
@@ -27,9 +28,9 @@ def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List
 
     query = query.split(" ", maxsplit=1)
     if len(query) == 1:
-        return db.exec(select(User).where(User.firstname.like(query[0] + "%"))).all()
+        return db.exec(select(User).where(func.lower(User.firstname).like(query[0].lower() + "%"))).all()
     else:
-        return db.exec(select(User).where(and_(User.firstname.like(query[0]), User.lastname.like(query[1] + "%")))).all()
+        return db.exec(select(User).where(and_(func.lower(User.firstname).like(query[0].lower()), User.lastname.like(query[1].lower() + "%")))).all()
 
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
