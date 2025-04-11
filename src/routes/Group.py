@@ -21,7 +21,7 @@ def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -
 
 
 @grouprouter.get("/{groupid}")
-def getGroupByID(groupid: int, db: DB, current_user: User = Depends(get_current_user)) -> Group:
+def getGroupByID(groupid: int, db: DB) -> Group:
     """get group"""
 
     return db.exec(select(Group).where(Group.groupid == groupid)).one()
@@ -56,7 +56,7 @@ def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
 
 
 @grouprouter.post("/{groupid}/users")
-def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:
+def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
     """add user to group"""
 
     groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid,userid == GroupMembers.userid))).one()
