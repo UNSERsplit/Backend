@@ -6,6 +6,7 @@ from sqlmodel import select
 from .routes.User import userrouter
 from .routes.Transaction import transactionRouter
 from .routes.Group import grouprouter
+from .routes.Friends import friendsRouter
 from .models.models import LoginRequest, LoginResponse
 from .auth import authrouter, get_current_user
 import datetime
@@ -16,6 +17,7 @@ app.include_router(userrouter)
 app.include_router(transactionRouter)
 app.include_router(grouprouter)
 app.include_router(authrouter)
+app.include_router(friendsrouter)
 
 @app.get("/api/test")
 def test_token(user: User = Depends(get_current_user)) -> str:
