@@ -65,6 +65,16 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
     u.password = "-REDACTED-"
     return u
 
+@userrouter.post("/device_token")
+def updateUser(device_token: str, db: DB, current_user: User = Depends(get_current_user)) -> User:
+    """update your own fcm device token"""
+    u = db.exec(select(User).where(User.userid == current_user.userid)).one()
+    u.fcm_device_token = device_token
+    db.commit()
+    db.refresh(u)
+    u.password = "-REDACTED-"
+    return u
+
 
 @userrouter.delete("/me")
 def deleteUser(db: DB, current_user: User = Depends(get_current_user)) -> User:
