@@ -6,7 +6,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Group import Group, GroupCreationRequest
-from ..models.User import User, PublicUserData
+from ..models.User import User, PublicUserData, OpenGroupAction
 from ..models.GroupMembers import GroupMembers
 from ..auth import get_current_user
 
@@ -67,7 +67,7 @@ def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depen
     added_user = db.exec(select(User).where(User.userid == userid)).one()
     added_group = db.exec(select(Group).where(Group.groupid == groupid)).one()
 
-    added_user.send_message("Added!", f"{current_user.firstname} added you to '{added_group.name}'")
+    added_user.send_message("Added!", f"{current_user.firstname} added you to '{added_group.name}'", action=OpenGroupAction(groupid))
 
     return groupmember
 
