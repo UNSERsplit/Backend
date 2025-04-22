@@ -93,6 +93,11 @@ def deleteUserFromGroup(groupid: int, userid: int, db: DB, current_user: User = 
         raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
 
+    removed_user = db.exec(select(User).where(User.userid == userid)).one()
+    removed_group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+
+    removed_user.send_message("Removed!", f"you have been removed from '{removed_group.name}'")
+
     db.delete(memberofgroup)
     db.commit()
     return memberofgroup

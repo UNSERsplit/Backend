@@ -26,7 +26,8 @@ class User(SQLModel, UserCreateRequest, PublicUserData, table=True):
 
     def send_message(self, title: str, text: str) -> str:
         if not self.fcm_device_token:
-            raise ValueError("fcm_device_token must be set in order to send messages")
+            print(f"fcm_device_token must be set in order to send messages {self.userid}")
+            return
         message = messaging.Message(
             data={
                 'title':title,
