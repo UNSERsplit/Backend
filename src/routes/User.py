@@ -5,7 +5,6 @@ from sqlmodel import select
 from ..models.User import User, UserCreateRequest, PrivateUserData, PublicUserData
 from ..auth import get_password_hash, get_current_user
 
-
 userrouter = APIRouter(prefix="/api/user")
 
 
@@ -25,13 +24,50 @@ def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> Pub
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
     """register user"""
-
+    if user.iban is not None:
+        isIbanValid(user.iban)
+        raise HTTPException("Iban not valid")
+        return null;
     user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
     db.add(user)
     db.commit()
     db.refresh(user)
     user.password = "-REDACTED-"
     return user
+
+
+def convertCharsToNumbers(string):
+    new = ""
+    string_chararray = [char for char in string.upper()]
+    for c in string_chararray:
+        if '0' <= c <= '9':
+            new = new + c
+        else:
+            value = ord(c) -  ord('A') + 10
+            new = new + str(value)
+    return int(new)
+
+
+def isIbanValid(iban: str) -> bool:
+    if iban is None:
+        return True
+    spacelessiban = iban.replace(" ", "").strip()
+    if len(spacelessiban) != 20:
+        return False
+    if spacelessiban[:2] != "AT":
+        return False
+
+    movediban = spacelessiban[4:] + spacelessiban[:4];
+    print(movediban)
+    asinteger = convertCharsToNumbers(movediban)
+    print(asinteger)
+    mod = asinteger % 97
+    print(mod)
+    if mod == 1:
+        return True
+    else:
+        return False
+
 
 @userrouter.get("/me")
 def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
@@ -42,9 +78,14 @@ def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
     user.password = "-REDACTED-"
     return user
 
+
 @userrouter.put("/me")
 def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """update your own data"""
+    if user.iban is not None:
+        isIbanValid(user.iban)
+        raise HTTPException("Iban not valid")
+        return null;
     u = db.exec(select(User).where(User.userid == current_user.userid)).one()
     u.firstname = user.firstname
     u.lastname = user.lastname
