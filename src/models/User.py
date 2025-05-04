@@ -34,6 +34,7 @@ class OpenGroupAction(Action):
 
 class User(SQLModel, UserCreateRequest, PublicUserData, table=True):
     fcm_device_token: Optional[str] = Field(default=None)
+    isVerified: Optional[bool] = Field(default=False)
 
     def send_message(self, title: str, text: str, action: Action = None) -> str:
         if not self.fcm_device_token:

@@ -9,6 +9,8 @@ from ..models.Group import Group, GroupCreationRequest
 from ..models.User import User, PublicUserData, OpenGroupAction
 from ..models.GroupMembers import GroupMembers
 from ..auth import get_current_user
+from ..models.Friends import Friends
+
 
 grouprouter = APIRouter(prefix="/api/group")
 
@@ -76,6 +78,9 @@ def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
 def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     """invite user to group [ADMIN]"""
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+    if db.exec(select(Friends).where(or_(and_(Friends.invited_userid == current_user.userid, Friends.inviting_userid == userid), and_(Friends.invited_userid == userid, Friends.inviting_userid == current_user.userid)))).one() is None:
+        raise HTTPException(status_code=status.HTTP_405_NOT_ALLOWED, detail="Only able to invite friends to group")
+
     if current_user.userid != group.adminuser_userid:
         raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     groupmember = GroupMembers(groupid=groupid, userid=userid, pending=True)
@@ -90,7 +95,7 @@ def deleteUserFromGroup(groupid: int, userid: int, db: DB, current_user: User = 
     """remove user from group [ADMIN]"""
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
     if current_user.userid != group.adminuser_userid:
-        raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
+        raise HTTPException(status_code=403, detail="You are not allowed to remove users from this group")
     memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
 
     removed_user = db.exec(select(User).where(User.userid == userid)).one()
