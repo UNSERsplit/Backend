@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from ..database import DB
 from typing import List
-from sqlmodel import select, and_
+from sqlmodel import select, and_, or_
 from sqlalchemy import func
 from ..models.User import User, UserCreateRequest, PrivateUserData, PublicUserData
 from ..auth import get_password_hash, get_current_user
@@ -21,6 +21,7 @@ def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> Pub
 
     return db.exec(select(User).where(User.userid == userid)).one()
 
+
 @userrouter.get("/search")
 def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List[PublicUserData]:
     """get public data from User that matches query"""
@@ -31,13 +32,13 @@ def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List
     else:
         return db.exec(select(User).where(and_(func.lower(User.firstname).like(query[0].lower()), User.lastname.like(query[1].lower() + "%")))).all()
 
+
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
     """register user"""
     if user.iban is not None:
         isIbanValid(user.iban)
-        raise HTTPException("Iban not valid")
-        return null;
+        raise HTTPException(status_code=400, detail="Iban not valid")
     user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
     db.add(user)
     db.commit()
@@ -53,7 +54,7 @@ def convertCharsToNumbers(string):
         if '0' <= c <= '9':
             new = new + c
         else:
-            value = ord(c) -  ord('A') + 10
+            value = ord(c) - ord('A') + 10
             new = new + str(value)
     return int(new)
 
@@ -67,7 +68,7 @@ def isIbanValid(iban: str) -> bool:
     if spacelessiban[:2] != "AT":
         return False
 
-    movediban = spacelessiban[4:] + spacelessiban[:4];
+    movediban = spacelessiban[4:] + spacelessiban[:4]
     print(movediban)
     asinteger = convertCharsToNumbers(movediban)
     print(asinteger)
@@ -94,8 +95,7 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
     """update your own data"""
     if user.iban is not None:
         isIbanValid(user.iban)
-        raise HTTPException("Iban not valid")
-        return null;
+        raise HTTPException(status_code=400, detail="Iban not valid")
     u = db.exec(select(User).where(User.userid == current_user.userid)).one()
     u.firstname = user.firstname
     u.lastname = user.lastname
@@ -106,6 +106,7 @@ def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get
     u.password = "-REDACTED-"
     return u
 
+
 @userrouter.post("/device_token")
 def updateUser(device_token: str, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """update your own fcm device token"""
@@ -115,6 +116,20 @@ def updateUser(device_token: str, db: DB, current_user: User = Depends(get_curre
     db.refresh(u)
     u.password = "-REDACTED-"
     return u
+
+
+@userrouter.get("/verify/{verification_code}")
+def verificateUser(db: DB, verification_code: str) -> User:
+    """verify user"""
+
+    users = db.exec(select(User).order_by(User.userid.desc())).all()
+    for user in users:
+        if get_password_hash(user.userid) == verification_code:
+            user.isVerified = True
+            db.commit()
+            db.refresh(user)
+            return user
+    raise HTTPException(status_code=401, detail="Verification code is invalid")
 
 
 @userrouter.delete("/me")
