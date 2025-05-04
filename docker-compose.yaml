@@ -11,9 +11,11 @@ services:
     
     environment:
       DB_URL: ${DB_URL}
+      GOOGLE_APPLICATION_CREDENTIALS: "/service-account.json"
 
     volumes:
       - ./src:/app
+      - ./service-account.json:/service-account.json:ro
     
     depends_on:
       - db

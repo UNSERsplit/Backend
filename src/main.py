@@ -9,9 +9,11 @@ from .routes.Group import grouprouter
 from .routes.Friends import friendsRouter
 from .models.models import LoginRequest, LoginResponse
 from .auth import authrouter, get_current_user
-import datetime
+import firebase_admin
 
-app = FastAPI()
+default_app = firebase_admin.initialize_app()
+
+app = FastAPI(redirect_slashes=False)
 
 app.include_router(userrouter)
 app.include_router(transactionRouter)

@@ -6,7 +6,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Group import Group, GroupCreationRequest
-from ..models.User import User, PublicUserData
+from ..models.User import User, PublicUserData, OpenGroupAction
 from ..models.GroupMembers import GroupMembers
 from ..auth import get_current_user
 
@@ -43,7 +43,7 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
     return g
 
 @grouprouter.put("/{groupid}")
-def updateGroup(groupid: int, group: GroupCreationRequest, db: DB) -> Group:
+def updateGroup(groupid: int, group: GroupCreationRequest, db: DB, current_user: User = Depends(get_current_user)) -> Group:
     """rename group [ADMIN]"""
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
     if current_user.userid != group.adminuser_userid:
@@ -63,6 +63,12 @@ def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
     groupmember.pending = False
     db.commit()
     db.refresh(groupmember)
+
+    added_user = db.exec(select(User).where(User.userid == userid)).one()
+    added_group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+
+    added_user.send_message("Added!", f"{current_user.firstname} added you to '{added_group.name}'", action=OpenGroupAction(groupid))
+
     return groupmember
 
 
@@ -86,6 +92,11 @@ def deleteUserFromGroup(groupid: int, userid: int, db: DB, current_user: User = 
     if current_user.userid != group.adminuser_userid:
         raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     memberofgroup = db.exec(select(GroupMembers).where(and_(GroupMembers.groupid == groupid, GroupMembers.userid == userid))).one()
+
+    removed_user = db.exec(select(User).where(User.userid == userid)).one()
+    removed_group = db.exec(select(Group).where(Group.groupid == groupid)).one()
+
+    removed_user.send_message("Removed!", f"you have been removed from '{removed_group.name}'")
 
     db.delete(memberofgroup)
     db.commit()

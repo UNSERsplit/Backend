@@ -65,12 +65,15 @@ async def get_current_user(db: DB, token: str = Depends(oauth_2_scheme)) -> User
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
+            print("Auth Error: no email")
             raise credential_exceptions
         token_data = TokenData(email=email)
-    except Exception:
+    except Exception as e:
+        print("Auth Exception:", e, "Token", token)
         raise credential_exceptions
     user = db.query(User).filter(User.email == token_data.email).first()
     if user is None:
+        print("Auth Error: user not found")
         raise credential_exceptions
 
     return user
