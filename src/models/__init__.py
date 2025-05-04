@@ -7,5 +7,6 @@ __all__ = [
     "User",
     "Group",
     "Transaction",
-    "GroupMembers"
+    "GroupMembers",
+    "Friends"
 ]

@@ -17,7 +17,7 @@ app.include_router(userrouter)
 app.include_router(transactionRouter)
 app.include_router(grouprouter)
 app.include_router(authrouter)
-app.include_router(friendsrouter)
+app.include_router(friendsRouter)
 
 @app.get("/api/test")
 def test_token(user: User = Depends(get_current_user)) -> str:

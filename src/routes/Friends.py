@@ -6,6 +6,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Friends import Friends
+from ..models.User import User
 from ..auth import get_current_user
 
 friendsRouter = APIRouter(prefix="/api/friends")
@@ -26,7 +27,7 @@ def getAllPendingFriendsForUser(db: DB, current_user: User = Depends(get_current
 
 @friendsRouter.post("/")
 def sendFriendRequest(db: DB, touserid: int, current_user: User = Depends(get_current_user)) -> Friends:
-    if db.exec(select(Friends).where(or_(and_(current_user.userid == Friends.invited_userid, touserid == Friends.inviting_userid), and_(current_user.userid == Friends.inviting_userid, touserid == Friends.invited_userid)))) .first() is not None:
+    if db.exec(select(Friends).where(or_(and_(current_user.userid == Friends.invited_userid, touserid == Friends.inviting_userid), and_(current_user.userid == Friends.inviting_userid, touserid == Friends.invited_userid)))).first() is not None:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Friend request already sent")
     friendrequest = Friends(invited_userid=touserid, inviting_userid=current_user.userid)
     db.add(friendrequest)
