@@ -16,14 +16,15 @@ friendsRouter = APIRouter(prefix="/api/friends")
 def getAllActiveFriendsOfUser(db: DB, current_user: User = Depends(get_current_user)) -> List[Friends]:
     """get all active Friends, which have accepted the invite"""
 
-    return db.exec(select(Friends).where(and_(or_(current_user.userid == Friends.invited_userid, current_user.userid == Friends.inviting_userid), Friends.pending is False))).all()
+    return db.exec(select(Friends).where(and_(or_(current_user.userid == Friends.invited_userid, current_user.userid == Friends.inviting_userid), Friends.pending == False))).all()
 
 
 @friendsRouter.get("/pending")
 def getAllPendingFriendsForUser(db: DB, current_user: User = Depends(get_current_user)) -> List[Friends]:
     """get all pending Friends, which invites you haven't accepted"""
 
-    return db.exec(select(Friends).where(and_(current_user.userid == Friends.invited_userid, Friends.pending is True))).all()
+    return db.exec(select(Friends).where(and_(current_user.userid == Friends.invited_userid, Friends.pending == True))).all()
+
 
 @friendsRouter.post("/")
 def sendFriendRequest(db: DB, touserid: int, current_user: User = Depends(get_current_user)) -> Friends:

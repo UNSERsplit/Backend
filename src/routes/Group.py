@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.sql.functions import current_user
 
 from ..database import DB
 from typing import List
@@ -58,10 +57,10 @@ def updateGroup(groupid: int, group: GroupCreationRequest, db: DB, current_user:
 
 
 @grouprouter.post("/{groupid}/users")
-def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
+def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depends(get_current_user)) -> GroupMembers:
     """add user to group"""
 
-    groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid,userid == GroupMembers.userid))).one()
+    groupmember = db.exec(select(GroupMembers).where(and_(groupid == GroupMembers.groupid, userid == GroupMembers.userid))).one()
     groupmember.pending = False
     db.commit()
     db.refresh(groupmember)
@@ -78,8 +77,8 @@ def addUserToGroup(groupid: int, userid: int, db: DB) -> GroupMembers:
 def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     """invite user to group [ADMIN]"""
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
-    if db.exec(select(Friends).where(or_(and_(Friends.invited_userid == current_user.userid, Friends.inviting_userid == userid), and_(Friends.invited_userid == userid, Friends.inviting_userid == current_user.userid)))).one() is None:
-        raise HTTPException(status_code=status.HTTP_405_NOT_ALLOWED, detail="Only able to invite friends to group")
+    if db.exec(select(Friends).where(or_(and_(Friends.invited_userid == current_user.userid, Friends.inviting_userid == userid), and_(Friends.invited_userid == userid, Friends.inviting_userid == current_user.userid)))).one_or_none() is None:
+        raise HTTPException(status_code=405, detail="Not allowed: Only able to invite friends to group")
 
     if current_user.userid != group.adminuser_userid:
         raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
