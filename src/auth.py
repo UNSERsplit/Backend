@@ -1,3 +1,4 @@
+import os
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -22,7 +23,7 @@ class TokenData(BaseModel):
 
 authrouter = APIRouter(prefix="/api/auth")
 
-SECRET_KEY = "abcdefghijklmnopqrstuvwxyz"
+SECRET_KEY = os.environ['SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 43800  # 1 Month
 
@@ -84,6 +85,9 @@ async def login_for_access_token(db: DB, form_data: OAuth2PasswordRequestForm = 
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    if not user.isVerified:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is not verified")
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
     return Token(access_token=access_token, token_type="Bearer", userid=user.userid)

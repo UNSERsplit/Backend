@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, HTTPException, Depends
 from ..database import DB
 from typing import List
@@ -5,6 +7,11 @@ from sqlmodel import select, and_, or_
 from sqlalchemy import func
 from ..models.User import User, UserCreateRequest, PrivateUserData, PublicUserData
 from ..auth import get_password_hash, get_current_user
+import hashlib
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 userrouter = APIRouter(prefix="/api/user")
 
@@ -40,11 +47,34 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
         isIbanValid(user.iban)
         raise HTTPException(status_code=400, detail="Iban not valid")
     user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
+
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    user = db.exec(select(User).where(User.email == user.email)).one()
+    sendEmail(user)
+
     user.password = "-REDACTED-"
     return user
+
+
+def sendEmail(user: User):
+    msg = MIMEMultipart()
+    msg['From'] = 'unsersplit@gmx.at'
+    msg['To'] = user.email
+    msg['Subject'] = 'Verifiziere deinen Account'
+    message = f'https://unserspl.it/api/user/verify/{hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest()}'  # Hashes unleich - bei verificate users
+    msg.attach(MIMEText(message))
+    mailserver = smtplib.SMTP('mail.gmx.net', 587)
+    mailserver.ehlo()
+    mailserver.starttls()
+    mailserver.ehlo()
+    mailserver.login('unsersplit@gmx.at', os.environ['EMAIL_PASS'])
+    mailserver.sendmail('unsersplit@gmx.at', user.email, msg.as_string())
+
+    mailserver.quit()
+    print('Email sent!')
 
 
 def convertCharsToNumbers(string):
@@ -69,11 +99,11 @@ def isIbanValid(iban: str) -> bool:
         return False
 
     movediban = spacelessiban[4:] + spacelessiban[:4]
-    print(movediban)
+
     asinteger = convertCharsToNumbers(movediban)
-    print(asinteger)
+
     mod = asinteger % 97
-    print(mod)
+
     if mod == 1:
         return True
     else:
@@ -124,7 +154,8 @@ def verificateUser(db: DB, verification_code: str) -> User:
 
     users = db.exec(select(User).order_by(User.userid.desc())).all()
     for user in users:
-        if get_password_hash(user.userid) == verification_code:
+        if hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest() == verification_code:
+
             user.isVerified = True
             db.commit()
             db.refresh(user)

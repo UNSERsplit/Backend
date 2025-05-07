@@ -11,6 +11,8 @@ services:
     
     environment:
       DB_URL: ${DB_URL}
+      EMAIL_PASS: ${EMAIL_PASS}
+      SECRET_KEY: ${SECRET_KEY}
       GOOGLE_APPLICATION_CREDENTIALS: "/service-account.json"
 
     volumes:
