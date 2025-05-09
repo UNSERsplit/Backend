@@ -35,17 +35,18 @@ def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List
 
     query = query.split(" ", maxsplit=1)
     if len(query) == 1:
-        return db.exec(select(User).where(func.lower(User.firstname).like(query[0].lower() + "%"))).all()
+        return db.exec(select(User).where(or_(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%")))).all()
     else:
-        return db.exec(select(User).where(and_(func.lower(User.firstname).like(query[0].lower()), User.lastname.like(query[1].lower() + "%")))).all()
+        return db.exec(select(User).where(or_(and_(func.lower(User.firstname).like("%" + query[0].lower() + "%"), func.lower(User.lastname).like("%" + query[1].lower() + "%")), and_(func.lower(User.firstname).like("%" + query[1].lower() + "%"), func.lower(User.lastname).like("%" + query[0].lower() + "%"))))).all()
 
 
 @userrouter.post("/")
 def createUser(user: UserCreateRequest, db: DB) -> User:
     """register user"""
-    if user.iban is not None:
-        isIbanValid(user.iban)
+    if not isIbanValid(user.iban):
         raise HTTPException(status_code=400, detail="Iban not valid")
+    if user.iban == "":
+        user.iban = None
     user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
 
     db.add(user)
@@ -90,7 +91,7 @@ def convertCharsToNumbers(string):
 
 
 def isIbanValid(iban: str) -> bool:
-    if iban is None:
+    if iban is "":
         return True
     spacelessiban = iban.replace(" ", "").strip()
     if len(spacelessiban) != 20:

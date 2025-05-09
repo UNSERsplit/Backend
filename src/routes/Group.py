@@ -106,6 +106,7 @@ def deleteUserFromGroup(groupid: int, userid: int, db: DB, current_user: User = 
     db.commit()
     return memberofgroup
 
+
 @grouprouter.get("/{groupid}/users")
 def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:
     """get all users in group [only Groupmembers]"""
@@ -114,3 +115,8 @@ def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_curre
     if getusers == []:
         raise HTTPException(status_code=403, detail="Not allowed to access this data")
     return db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(and_(GroupMembers.groupid == groupid, GroupMembers.pending == False))).all()
+
+
+@grouprouter.get("/search")
+def searchGroupsOfUser(db: DB, query: str, current_user: User = Depends(get_current_user)) -> List[Group]:
+    return db.exec(select(Group).join(GroupMembers, Group.groupid == GroupMembers.groupid).where(and_(func.lower(Group.name).like("%" + query.lower() + "%"), and_(GroupMembers.groupid == Group.groupid, GroupMembers.userid == current_user.userid)))).all()
