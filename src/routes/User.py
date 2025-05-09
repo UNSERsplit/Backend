@@ -91,7 +91,7 @@ def convertCharsToNumbers(string):
 
 
 def isIbanValid(iban: str) -> bool:
-    if iban is "":
+    if iban == "":
         return True
     spacelessiban = iban.replace(" ", "").strip()
     if len(spacelessiban) != 20:
