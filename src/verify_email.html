@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Willkommen, {{ user.firstname }}</title>
+        <style>
+            html {
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .center {
+                display: flex;
+                justify-content: center;
+            }
+            .btn {
+                text-decoration: none;
+                color: white;
+                background-color: #2e971e;
+                padding: 1rem;
+                border-radius: 5px;
+            }
+            .notice {
+                color: gray;
+            }
+        </style>
+    </head>
+    <body style="margin: 0; padding: 0;"  class="center">
+        <div>
+            <div class="center">
+                <h1>Hey {{ user.firstname }},</h1>
+            </div>
+            <p>Bitte verifiziere die Erstellung deines UNSERsplit Accounts hier:</p>
+            <div class="center">
+                <a class="btn" href="{{ link }}">Verifizieren</a>
+            </div>
+            <p class="notice">Du erhälts diese Email, da jemand einen Account mit deiner Email erstellt hat. <br>Falls das nicht du gewesen bist, kannst du diese Email getrost ignorieren.</p>
+        </div>
+    </body>
+</html>
