@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Request
+from pydantic import BaseModel
 from .models.User import User
 from .database import DB
 from typing import List
@@ -24,3 +25,11 @@ app.include_router(friendsRouter)
 @app.get("/api/test")
 def test_token(user: User = Depends(get_current_user)) -> str:
     return "ok"
+
+class ScanData(BaseModel):
+    scan: str
+
+@app.post("/")
+def test_token(data: ScanData) -> str:
+    print(data.scan)
+    return data.scan

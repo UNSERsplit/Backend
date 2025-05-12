@@ -6,7 +6,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Friends import Friends
-from ..models.User import User
+from ..models.User import User, ShowFriendsAction
 from ..auth import get_current_user
 
 friendsRouter = APIRouter(prefix="/api/friends")
@@ -34,21 +34,29 @@ def sendFriendRequest(db: DB, touserid: int, current_user: User = Depends(get_cu
     db.add(friendrequest)
     db.commit()
     db.refresh(friendrequest)
+
+    user = db.exec(select(User).where(User.userid == touserid)).one()
+    user.send_message("Neue Freundesanfrage", f"{current_user.firstname} {current_user.lastname} möchte mit die befreundet sein", action=ShowFriendsAction(True))
+    
     return friendrequest
 
 
 @friendsRouter.put("/")
 def acceptFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(get_current_user)):
-    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.inviting_userid, current_user.userid == Friends.invited_userid))).one()
+    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.invited_userid, current_user.userid == Friends.inviting_userid))).one()
     friendrequest.pending = False
     db.commit()
     db.refresh(friendrequest)
+
+    user = db.exec(select(User).where(User.userid == fromuserid)).one()
+    user.send_message("Neuer Freund", f"Du bist nun mit {current_user.firstname} {current_user.lastname} befreundet", action=ShowFriendsAction(False))
+
     return friendrequest
 
 
 @friendsRouter.delete("/")
 def denyFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(get_current_user)):
-    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.inviting_userid, current_user.userid == Friends.invited_userid))).one()
+    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.invited_userid, current_user.userid == Friends.inviting_userid))).one()
     db.delete(friendrequest)
     db.commit()
     return friendrequest
