@@ -48,7 +48,7 @@ def acceptFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(ge
     db.commit()
     db.refresh(friendrequest)
 
-    user = db.exec(select(User).where(User.userid == fromuserid)).one()
+    user = db.exec(select(User).where(User.userid == friendrequest.inviting_userid)).one()
     user.send_message("Neuer Freund", f"Du bist nun mit {current_user.firstname} {current_user.lastname} befreundet", action=ShowFriendsAction(False))
 
     return friendrequest
