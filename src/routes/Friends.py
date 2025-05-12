@@ -43,7 +43,7 @@ def sendFriendRequest(db: DB, touserid: int, current_user: User = Depends(get_cu
 
 @friendsRouter.put("/")
 def acceptFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(get_current_user)):
-    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.invited_userid, current_user.userid == Friends.inviting_userid))).one()
+    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.inviting_userid, current_user.userid == Friends.invited_userid))).one()
     friendrequest.pending = False
     db.commit()
     db.refresh(friendrequest)
@@ -56,7 +56,7 @@ def acceptFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(ge
 
 @friendsRouter.delete("/")
 def denyFriendRequest(db: DB, fromuserid: int, current_user: User = Depends(get_current_user)):
-    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.invited_userid, current_user.userid == Friends.inviting_userid))).one()
+    friendrequest = db.exec(select(Friends).where(and_(fromuserid == Friends.inviting_userid, current_user.userid == Friends.invited_userid))).one()
     db.delete(friendrequest)
     db.commit()
     return friendrequest
