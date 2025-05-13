@@ -21,7 +21,7 @@ def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -
     return db.exec(select(Group).join(GroupMembers, Group.groupid == GroupMembers.groupid).where(current_user.userid == GroupMembers.userid)).all()
 
 
-@grouprouter.get("/{groupid}")
+@grouprouter.get("/{groupid:int}")
 def getGroupByID(groupid: int, db: DB) -> Group:
     """get group"""
 
