@@ -6,7 +6,7 @@ from typing import List
 from sqlmodel import select
 from sqlalchemy import or_, and_
 from ..models.Friends import Friends
-from ..models.User import User, ShowFriendsAction
+from ..models.User import User, ShowFriendsAction, PublicUserData
 from ..auth import get_current_user
 
 friendsRouter = APIRouter(prefix="/api/friends")
@@ -24,6 +24,13 @@ def getAllPendingFriendsForUser(db: DB, current_user: User = Depends(get_current
     """get all pending Friends, which invites you haven't accepted"""
 
     return db.exec(select(Friends).where(and_(current_user.userid == Friends.invited_userid, Friends.pending == True))).all()
+
+@friendsRouter.get("/users")
+def getAllActiveFriendsOfUser(db: DB, current_user: User = Depends(get_current_user)) -> List[PublicUserData]:
+    """get all active Friends, which have accepted the invite as User objects"""
+
+    return db.exec(select(User).join(Friends, and_(Friends.pending == False, or_(and_(current_user.userid == Friends.invited_userid, User.userid == Friends.inviting_userid)
+                                                , and_(current_user.userid == Friends.inviting_userid, User.userid == Friends.invited_userid))))).all()
 
 
 @friendsRouter.post("/")
