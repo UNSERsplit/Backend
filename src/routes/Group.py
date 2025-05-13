@@ -8,6 +8,7 @@ from ..models.Group import Group, GroupCreationRequest
 from ..models.User import User, PublicUserData, OpenGroupAction
 from ..models.GroupMembers import GroupMembers
 from ..auth import get_current_user
+from sqlalchemy import func
 from ..models.Friends import Friends
 
 
