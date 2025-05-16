@@ -25,7 +25,6 @@ def getUsers(db: DB) -> List[User]:
 @userrouter.get("/{userid:int}")
 def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> PublicUserData:
     """get public data from User"""
-
     return db.exec(select(User).where(User.userid == userid)).one()
 
 
@@ -34,6 +33,8 @@ def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List
     """get public data from User that matches query"""
 
     query = query.split(" ", maxsplit=1)
+    if len(query) == 0:
+        raise HTTPException(status_code=400, detail="Invalid query")
     if len(query) == 1:
         return db.exec(select(User).where(or_(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%")))).all()
     else:
@@ -73,9 +74,7 @@ def sendEmail(user: User):
     mailserver.ehlo()
     mailserver.login('unsersplit@gmx.at', os.environ['EMAIL_PASS'])
     mailserver.sendmail('unsersplit@gmx.at', user.email, msg.as_string())
-
     mailserver.quit()
-    print('Email sent!')
 
 
 def convertCharsToNumbers(string):
@@ -113,7 +112,7 @@ def isIbanValid(iban: str) -> bool:
 
 @userrouter.get("/me")
 def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
-    """get your own data"""
+    """get your own Userdata"""
 
     u = db.exec(select(User).where(User.userid == current_user.userid)).one()
     user = User(**u.model_dump())
@@ -124,9 +123,9 @@ def getSelf(db: DB, current_user: User = Depends(get_current_user)) -> User:
 @userrouter.put("/me")
 def updateUser(user: UserCreateRequest, db: DB, current_user: User = Depends(get_current_user)) -> User:
     """update your own data"""
-    if user.iban is not None:
-        isIbanValid(user.iban)
-        raise HTTPException(status_code=400, detail="Iban not valid")
+    if user.iban != "":
+        if not isIbanValid(user.iban):
+            raise HTTPException(status_code=400, detail="Iban not valid")
     u = db.exec(select(User).where(User.userid == current_user.userid)).one()
     u.firstname = user.firstname
     u.lastname = user.lastname
@@ -150,26 +149,30 @@ def updateUser(device_token: str, db: DB, current_user: User = Depends(get_curre
 
 
 @userrouter.get("/verify/{verification_code}")
-def verificateUser(db: DB, verification_code: str) -> User:
+def verificateUser(db: DB, verification_code: str):
     """verify user"""
 
     users = db.exec(select(User).order_by(User.userid.desc())).all()
     for user in users:
         if hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest() == verification_code:
-
             user.isVerified = True
-            db.commit()
             db.refresh(user)
-            return user
+            db.commit()
+
+            raise HTTPException(status_code=200, detail="Verification successful")
     raise HTTPException(status_code=401, detail="Verification code is invalid")
 
 
 @userrouter.delete("/me")
-def deleteUser(db: DB, current_user: User = Depends(get_current_user)) -> User:
+def deleteUser(db: DB, current_user: User = Depends(get_current_user)) -> str:
     """delete your own account"""
 
     user = db.exec(select(User).where(User.userid == current_user.userid)).one()
-    db.delete(user)
+    user.email = ""
+    user.password = ""
+    user.iban = ""
+    db.refresh(user)
     db.commit()
-    user.password = "-REDACTED-"
-    return user
+    if db.exec(select(User).where(User.userid == current_user.userid)).one().email != "":
+        raise HTTPException(status_code=500, detail="User could not be deleted")
+    raise HTTPException(status_code=200, detail="Email, Password and Iban deleted, name other data still available because of transaction infos for other users")
