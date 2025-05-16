@@ -42,7 +42,7 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
     db.add(groupmember)
     db.commit()
     db.refresh(groupmember)
-    return g
+    return db.exec(select(Group).where(Group.groupid == g.groupid)).one()
 
 @grouprouter.put("/{groupid}")
 def updateGroup(groupid: int, group: GroupCreationRequest, db: DB, current_user: User = Depends(get_current_user)) -> Group:
