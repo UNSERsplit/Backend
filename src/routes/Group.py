@@ -8,8 +8,9 @@ from ..models.Group import Group, GroupCreationRequest
 from ..models.User import User, PublicUserData, OpenGroupAction
 from ..models.GroupMembers import GroupMembers
 from ..auth import get_current_user
-from sqlalchemy import func
+from sqlalchemy import func, delete
 from ..models.Friends import Friends
+from ..models.Transaction import Transaction
 
 
 grouprouter = APIRouter(prefix="/api/group")
@@ -25,8 +26,10 @@ def getAllGroupsOfUser(db: DB, current_user: User = Depends(get_current_user)) -
 @grouprouter.get("/{groupid:int}")
 def getGroupByID(groupid: int, db: DB) -> Group:
     """get group"""
-
-    return db.exec(select(Group).where(Group.groupid == groupid)).one()
+    group = db.exec(select(Group).where(Group.groupid == groupid)).one_or_none()
+    if group is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return group
 
 
 @grouprouter.post("/")
@@ -121,3 +124,15 @@ def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_curre
 @grouprouter.get("/search")
 def searchGroupsOfUser(db: DB, query: str, current_user: User = Depends(get_current_user)) -> List[Group]:
     return db.exec(select(Group).join(GroupMembers, Group.groupid == GroupMembers.groupid).where(and_(func.lower(Group.name).like("%" + query.lower() + "%"), and_(GroupMembers.groupid == Group.groupid, GroupMembers.userid == current_user.userid)))).all()
+
+
+@grouprouter.delete("/{group_id}")
+def deleteGroup(db: DB, group_id: int, current_user: User = Depends(get_current_user)):
+    """!!! Harddelete !!! Group, all informations get deleted"""
+    db.exec(delete(GroupMembers).where(GroupMembers.groupid == group_id))
+    db.exec(delete(Transaction).where(Transaction.groupid == group_id))
+    db.exec(delete(Group).where(Group.groupid == group_id))
+    db.commit()
+    if db.exec(select(Group).where(Group.groupid == group_id)).one_or_none() is None:
+        raise HTTPException(status_code=200, detail="Deleted Group")
+    raise HTTPException(status_code=400, detail="Could not delete group")
