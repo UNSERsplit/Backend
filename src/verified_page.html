@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Willkommen, {{ user.firstname }}</title>
+        <style>
+            html {
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .center {
+                display: flex;
+                justify-content: center;
+            }
+            .btn {
+                text-decoration: none;
+                color: white;
+                background-color: #2e971e;
+                padding: 1rem;
+                border-radius: 5px;
+            }
+            .notice {
+                color: gray;
+            }
+        </style>
+    </head>
+    <body style="margin: 0; padding: 0;"  class="center">
+        <div>
+            <div class="center">
+                <h1>Hey {{ user.firstname }},</h1>
+            </div>
+            <div class="center">
+                <p>Du bist nun verifiziert! 🎉</p>
+            </div>
+            <div class="center">
+                <a class="btn" href="/open">hier gehts zur App weiter</a>
+            </div>
+            <div class="center">
+                <p class="notice">Du kannst dieses Fenster nun schließen</p>
+            </div>
+        </div>
+    </body>
+</html>

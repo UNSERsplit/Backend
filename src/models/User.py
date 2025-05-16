@@ -32,6 +32,13 @@ class OpenGroupAction(Action):
         self.data["action"] = "showGroup"
         self.data["groupId"] = str(groupId)
 
+class ShowFriendsAction(Action):
+    def __init__(self, pending: bool):
+        super().__init__()
+
+        self.data["action"] = "showFriends"
+        self.data["showPending"] = str(pending)
+
 class User(SQLModel, UserCreateRequest, PublicUserData, table=True):
     fcm_device_token: Optional[str] = Field(default=None)
     isVerified: Optional[bool] = Field(default=False)

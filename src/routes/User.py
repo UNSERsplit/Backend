@@ -1,6 +1,7 @@
 import os
 
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import HTMLResponse
 from ..database import DB
 from typing import List
 from sqlmodel import select, and_, or_
@@ -12,6 +13,12 @@ import hashlib
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import jinja2
+
+def read_html(path: str, **kwargs) -> str:
+    with open(path) as f:
+        template: jinja2.Template = jinja2.Template(f.read())
+        return template.render(**kwargs)
 
 userrouter = APIRouter(prefix="/api/user")
 
@@ -62,12 +69,19 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
 
 
 def sendEmail(user: User):
-    msg = MIMEMultipart()
+
+    link = f"https://unserspl.it/api/user/verify/{hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest()}"
+
+    msg = MIMEMultipart('alternative')
     msg['From'] = 'unsersplit@gmx.at'
     msg['To'] = user.email
     msg['Subject'] = 'Verifiziere deinen Account'
-    message = f'https://unserspl.it/api/user/verify/{hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest()}'  # Hashes unleich - bei verificate users
-    msg.attach(MIMEText(message))
+    message = f'Bitte verifiziere deien UNSERsplit Account mit folgendem Link:\n{link}'
+
+    html_message = read_html("verify_email.html", user=user, link=link)
+    msg.attach(MIMEText(message, 'plain'))
+    msg.attach(MIMEText(html_message, 'html'))
+
     mailserver = smtplib.SMTP('mail.gmx.net', 587)
     mailserver.ehlo()
     mailserver.starttls()
@@ -90,7 +104,7 @@ def convertCharsToNumbers(string):
 
 
 def isIbanValid(iban: str) -> bool:
-    if iban is "":
+    if iban == "":
         return True
     spacelessiban = iban.replace(" ", "").strip()
     if len(spacelessiban) != 20:
@@ -159,7 +173,7 @@ def verificateUser(db: DB, verification_code: str):
             db.refresh(user)
             db.commit()
 
-            raise HTTPException(status_code=200, detail="Verification successful")
+            return HTMLResponse(read_html("verified_page.html", user=user))
     raise HTTPException(status_code=401, detail="Verification code is invalid")
 
 
