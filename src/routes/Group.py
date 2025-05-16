@@ -80,6 +80,8 @@ def addUserToGroup(groupid: int, userid: int, db: DB, current_user: User = Depen
 @grouprouter.post("/{groupid}/users/{userid}/invite")
 def inviteUserToGroup(db: DB, groupid: int, userid: int, current_user: User = Depends(get_current_user)) -> GroupMembers:  # send invite
     """invite user to group [ADMIN]"""
+    if db.exec(select(GroupMembers).where(and_(GroupMembers.userid == userid, GroupMembers.groupid == groupid))).all() != []:
+        raise HTTPException(status_code=403, detail="User already invited or in group")
     group = db.exec(select(Group).where(Group.groupid == groupid)).one()
     if db.exec(select(Friends).where(or_(and_(Friends.invited_userid == current_user.userid, Friends.inviting_userid == userid), and_(Friends.invited_userid == userid, Friends.inviting_userid == current_user.userid)))).one_or_none() is None:
         raise HTTPException(status_code=405, detail="Not allowed: Only able to invite friends to group")
