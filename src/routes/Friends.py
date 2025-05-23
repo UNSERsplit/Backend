@@ -42,7 +42,8 @@ def searchActiveFriendsOfUser(db: DB, query: str, current_user: User = Depends(g
     if len(query) == 0:
         raise HTTPException(status_code=400, detail="Invalid query")
     if len(query) == 1:
-        return db.exec(select(User).join(Friends, and_(Friends.pending == False, or_(and_(current_user.userid == Friends.invited_userid, User.userid == Friends.inviting_userid), and_(current_user.userid == Friends.inviting_userid, User.userid == Friends.invited_userid)))).where(or_(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%")))).all()
+        return db.exec(select(User).join(Friends, and_(Friends.pending == False, or_(and_(current_user.userid == Friends.invited_userid, User.userid == Friends.inviting_userid),
+            and_(current_user.userid == Friends.inviting_userid, User.userid == Friends.invited_userid)))).where(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%"))).all()
     return db.exec(select(User).join(Friends, and_(Friends.pending == False, or_(and_(current_user.userid == Friends.invited_userid, User.userid == Friends.inviting_userid), and_(current_user.userid == Friends.inviting_userid, User.userid == Friends.invited_userid)))).where(or_(and_(func.lower(User.firstname).like("%" + query[0].lower() + "%"), func.lower(User.lastname).like("%" + query[1].lower() + "%")), and_(func.lower(User.firstname).like("%" + query[1].lower() + "%"), func.lower(User.lastname).like("%" + query[0].lower() + "%"))))).all()
 
 
