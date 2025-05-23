@@ -16,8 +16,11 @@ default_app = firebase_admin.initialize_app()
 
 app = FastAPI(redirect_slashes=False)
 
+# User Routes
 app.include_router(userrouter)
+# Transaction Routes
 app.include_router(transactionRouter)
+# Group Routes
 app.include_router(grouprouter)
 app.include_router(authrouter)
 app.include_router(friendsRouter)
