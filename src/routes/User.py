@@ -169,8 +169,9 @@ def verificateUser(db: DB, verification_code: str):
     users = db.exec(select(User).order_by(User.userid.desc())).all()
     for user in users:
         if hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest() == verification_code:
-            user.isVerified = True
-            db.refresh(user)
+            u = db.exec(select(User).where(User.userid == user.userid)).one()
+            u.isVerified = True
+            db.refresh(u)
             db.commit()
 
             return HTMLResponse(read_html("verified_page.html", user=user))
