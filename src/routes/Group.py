@@ -121,7 +121,7 @@ def getUsersOfGroup(db: DB, groupid: int, current_user: User = Depends(get_curre
     if getusers == []:
         raise HTTPException(status_code=403, detail="Not allowed to access this data")
     users = db.exec(select(User).join(GroupMembers, User.userid == GroupMembers.userid).where(and_(GroupMembers.groupid == groupid, GroupMembers.pending == False))).all()
-    print(users)
+    print(users, groupid)
     return users
 
 @grouprouter.get("/search")
