@@ -87,7 +87,7 @@ def denyFriendRequest(db: DB, requestid: int, current_user: User = Depends(get_c
 
 @friendsRouter.delete("/{userid}")
 def deleteFriend(db: DB, userid: int, current_user: User = Depends(get_current_user)):
-    query = db.exec(select(Friends).where(or_(and_(userid == Friends.inviting_userid, current_user.userid == Friends.invited_userid), or_(userid == Friends.invited_userid, current_user.userid == Friends.inviting_userid)))).one()
+    query = db.exec(select(Friends).where(or_(and_(userid == Friends.inviting_userid, current_user.userid == Friends.invited_userid), and_(userid == Friends.invited_userid, current_user.userid == Friends.inviting_userid)))).one()
     db.delete(query)
     db.commit()
     return query
