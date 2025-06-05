@@ -171,8 +171,8 @@ def verificateUser(db: DB, verification_code: str):
     for user in users:
         if hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest() == verification_code:
             user.isVerified = True
-            db.refresh(user)
             db.commit()
+            db.refresh(user)
 
             return HTMLResponse(read_html("verified_page.html", user=user))
     raise HTTPException(status_code=401, detail="Verification code is invalid")
@@ -186,8 +186,8 @@ def deleteUser(db: DB, current_user: User = Depends(get_current_user)) -> str:
     user.email = ""
     user.password = ""
     user.iban = ""
-    db.refresh(user)
     db.commit()
+    db.refresh(user)
     if db.exec(select(User).where(User.userid == current_user.userid)).one().email != "":
         raise HTTPException(status_code=500, detail="User could not be deleted")
     raise HTTPException(status_code=200, detail="Email, Password and Iban deleted, name other data still available because of transaction infos for other users")
