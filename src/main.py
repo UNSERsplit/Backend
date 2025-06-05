@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from .models.User import User
 from .database import DB
@@ -28,6 +29,10 @@ app.include_router(friendsRouter)
 @app.get("/api/test")
 def test_token(user: User = Depends(get_current_user)) -> str:
     return "ok"
+
+@app.get("/open")
+def redirect_to_github() -> RedirectResponse:
+    return RedirectResponse("https://github.com/UNSERsplit/App/releases/latest/")
 
 class ScanData(BaseModel):
     scan: str
