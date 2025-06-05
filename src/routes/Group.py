@@ -50,10 +50,10 @@ def createGroup(db: DB, group: GroupCreationRequest, current_user: User = Depend
 @grouprouter.put("/{groupid}")
 def updateGroup(groupid: int, group: GroupCreationRequest, db: DB, current_user: User = Depends(get_current_user)) -> Group:
     """rename group [ADMIN]"""
-    group = db.exec(select(Group).where(Group.groupid == groupid)).one()
-    if current_user.userid != group.adminuser_userid:
-        raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
     g = db.exec(select(Group).where(Group.groupid == groupid)).one()
+    if current_user.userid != g.adminuser_userid:
+        raise HTTPException(status_code=403, detail="You are not allowed to invite to this group")
+
     g.name = group.model_dump()["name"]
     db.commit()
     db.refresh(g)
