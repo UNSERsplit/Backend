@@ -38,14 +38,16 @@ def getUserById(db: DB, userid: int, _: User = Depends(get_current_user)) -> Pub
 @userrouter.get("/search")
 def searchUsers(db: DB, query: str, _: User = Depends(get_current_user)) -> List[PublicUserData]:
     """get public data from User that matches query"""
-
     query = query.split(" ", maxsplit=1)
     if len(query) == 0:
         raise HTTPException(status_code=400, detail="Invalid query")
     if len(query) == 1:
-        return db.exec(select(User).where(or_(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%")))).all()
+        return db.exec(select(User).where(and_(or_(func.lower(User.firstname + " " + User.lastname).like("%" + query[0].lower() + "%"))), User.userid != _.userid)).all()
     else:
-        return db.exec(select(User).where(or_(and_(func.lower(User.firstname).like("%" + query[0].lower() + "%"), func.lower(User.lastname).like("%" + query[1].lower() + "%")), and_(func.lower(User.firstname).like("%" + query[1].lower() + "%"), func.lower(User.lastname).like("%" + query[0].lower() + "%"))))).all()
+        return db.exec(select(User).where(and_(or_(and_(func.lower(User.firstname).like("%" + query[0].lower() + "%"),
+                                                   func.lower(User.lastname).like("%" + query[1].lower() + "%")),
+                                              and_(func.lower(User.firstname).like("%" + query[1].lower() + "%"),
+                                                   func.lower(User.lastname).like("%" + query[0].lower() + "%")))),User.userid != _.userid)).all()
 
 
 @userrouter.post("/")
@@ -69,7 +71,6 @@ def createUser(user: UserCreateRequest, db: DB) -> User:
 
 
 def sendEmail(user: User):
-
     link = f"https://unserspl.it/api/user/verify/{hashlib.sha256(str(user.userid).encode('utf-8')).hexdigest()}"
 
     msg = MIMEMultipart('alternative')
