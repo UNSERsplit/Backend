@@ -31,8 +31,8 @@ def addTransaction(db: DB, transaction: TransactionCreateRequest, current_user: 
     """create new transaction (only between friends)"""
 
     transaction = Transaction(**transaction.model_dump(), fromuserid=current_user.userid, date=date.today())
-
-    if transaction.groupid != None and db.exec(select(Friends).where(and_(or_(and_(transaction.touserid == Friends.invited_userid, transaction.fromuserid == Friends.inviting_userid), and_(transaction.fromuserid == Friends.invited_userid, transaction.touserid == Friends.inviting_userid)), Friends.pending == False))).one_or_none() is None:
+    print(transaction.groupid)
+    if db.exec(select(Friends).where(and_(or_(and_(transaction.touserid == Friends.invited_userid, transaction.fromuserid == Friends.inviting_userid), and_(transaction.fromuserid == Friends.invited_userid, transaction.touserid == Friends.inviting_userid)), Friends.pending == False))).one_or_none() is None:
         raise HTTPException(status_code=405, detail="Not allowed to invite this user, only friends")
 
     db.add(transaction)
