@@ -30,7 +30,7 @@ app.include_router(friendsRouter)
 def test_token(user: User = Depends(get_current_user)) -> str:
     return "ok"
 
-@app.get("/open")
+@app.get("/download")
 def redirect_to_github() -> RedirectResponse:
     return RedirectResponse("https://github.com/UNSERsplit/App/releases/latest/")
 
